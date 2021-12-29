@@ -11,12 +11,24 @@
                     <input class="form-control" type="search" name="term" value="<?= htmlspecialchars($term) ?>">
                     <br><input class="btn btn-primary btn-sm" type="submit" value="Search">
                 </form>
-                <ul class="list-group list-group-flush">
+
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">id</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                        </tr>
+                    </thead>
                     <?php foreach ($users as $user) : ?>
-                        <li class="list-group-item"><?= htmlspecialchars($user['name']) ?>
-                        </li>
+                        <tr>
+                            <td class="table-light"><?= htmlspecialchars($user['id']) ?></td>
+                            <td class="table-light"><?= htmlspecialchars($user['name']) ?></td>
+                            <td class="table-light"><?= htmlspecialchars($user['email']) ?></td>
+                        </tr>
                     <?php endforeach ?>
-                </ul>
+                </table>
+
                 <form action="/users/new" method="get">
                     <br><br><button class="btn btn-outline-success">add user</button>
                 </form>

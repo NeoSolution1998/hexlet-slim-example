@@ -9,11 +9,15 @@ use App\Validator;
 
 use function Symfony\Component\String\s;
 
+session_start();
+
+
 $container = new Container();
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
 });
+
 $app = AppFactory::createFromContainer($container);
 $app->addErrorMiddleware(true, true, true);
 
@@ -34,25 +38,17 @@ $app->get('/courses/{courseId}/lessons/{id}', function ($request, $response, arr
         ->write("<br/>  Lesson id: {$id}");
 });
 
-$app->get('/usersid/{id}', function ($request, $response, $args){
-    $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
-    return $this->get('renderer')->render($response, 'users/show.phtml', $params);
-});
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
 $app->get('/users', function ($request, $response) {
     $file = file_get_contents('src/save.php'); // открываем файл
     $users = json_decode($file, true); // данные из файла превращаем в массив 
-    
+
     $term = $request->getQueryParam('term'); // достаем поисковые данные
     $result = collect($users)->filter(
         fn ($user) => str_contains($user['name'], $term) ? $user['name'] : false
     ); //фильтруем данные по запросу
     $params = ['users' => $result, 'term' => $term];
     return $this->get('renderer')->render($response, 'users/users.phtml', $params);
-});
-
+})->setName('get-users');
 
 $app->post('/users', function ($request, $response) {
 
@@ -60,7 +56,7 @@ $app->post('/users', function ($request, $response) {
     $user = $request->getParsedBodyParam('user');
     $errors = $validator->validate($user);
     // запись файла
-    if (count($errors) === 0){
+    if (count($errors) === 0) {
         $path = 'src/save.php';
         $file = file_get_contents($path); // открываем файл
         $fileArray = json_decode($file, true); // данные из файла превращаем в массив
@@ -71,16 +67,37 @@ $app->post('/users', function ($request, $response) {
     }
     $params = ['user' => $user, 'errors' => $errors];
     return $this->get('renderer')->render($response, 'users/new.phtml', $params);
-});
+})->setName('post-users');
 
 $app->get('/users/new', function ($request, $response) {
-    $id = rand();
+    $id = rand(1, 100);
     $params = ['user' => ['name' => '', 'email' => '', 'id' => $id], 'errors' => []];
     return $this->get('renderer')->render($response, 'users/new.phtml', $params);
+})->setName('users-new');
+
+$app->get('/users/{id}', function ($request, $response, $args) {
+    $file = file_get_contents('src/save.php'); // открываем файл
+    $users = json_decode($file, true); // данные из файла превращаем в массив
+
+    foreach ($users as $user) {
+        if (in_array($args['id'], $user) === true) {
+            $params = ['id' => $user['id'], 'name' => $user['name'], 'email' => $user['email']];
+            return $this->get('renderer')->render($response, 'users/show.phtml', $params);
+        }
+    }
+    return $response->withStatus(404);
 });
+///////////////////////////////////TEST////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+$router = $app->getRouteCollector()->getRouteParser();// тест роутинга
 
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
+$app->get('/test', function ($request, $response) use ($router) {
+    $id = rand(1, 100);
+    $params = ['user' => ['name' => '', 'email' => '', 'id' => $id], 'errors' => []];
+    return $this->get('renderer')->render($response, 'users/test.phtml', $params);
+})->setName('test');
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 $app->run();
