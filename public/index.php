@@ -13,13 +13,21 @@ session_start();
 
 
 $container = new Container();
+
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
 });
 
+$container->set('flash', function () {
+    return new \Slim\Flash\Messages();
+});
+
 $app = AppFactory::createFromContainer($container);
 $app->addErrorMiddleware(true, true, true);
+
+AppFactory::setContainer($container);
+$app = AppFactory::create();
 
 $app->get('/', function ($request, $response) {
     $response->getBody()->write('Welcome to Slim!');
