@@ -137,12 +137,14 @@ $app->patch('/users/{id}', function ($request, $response, array $args) use ($rou
     $errors = $validator->validate($updateUser);
 
     if (count($errors) === 0) {
-        $userUp = collect($users)->map(function ($item, $key) use ($updateUser) {
-            if($updateUser['id'] == $item['id']){
+        $userUp = collect($users)->map(function ($item, $key) use ($id, $updateUser) {
+            if($id == $item['id']){
+                $updateUser['id'] = $id;
                 return $updateUser;
             } 
             return $item;
         });//меняем старые данные на новые
+
         file_put_contents('src/save.php', json_encode($userUp)); // сохраняем изменения
         $this->get('flash')->addMessage('success', 'User has been updated');
         $url = $router->urlFor('get-users');
@@ -152,6 +154,7 @@ $app->patch('/users/{id}', function ($request, $response, array $args) use ($rou
     $params = [
         'errors' => $errors,
         'data' => $updateUser,
+        'userID' => $id
     ];
 
     return $this->get('renderer')
@@ -165,7 +168,6 @@ $app->delete('/users/{id}', function ($request, $response, array $args) use ($ro
     $id = $args['id'];
     $file = file_get_contents('src/save.php'); // открываем файл
     $users = json_decode($file, true); // данные из файла превращаем в массив
-
     $delete = collect($users)->map(function ($item, $key) use ($id) {
         if($id == $item['id']){
             unset($item);

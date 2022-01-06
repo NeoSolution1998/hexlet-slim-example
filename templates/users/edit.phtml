@@ -8,7 +8,7 @@
 
             <h1>Обновление данных пользователя</h1>
 
-            <form action="/users/<?= $user['id'] ?>" method="post">
+            <form action="/users/<?= $user['id'] ?? $userID ?>" method="post">
                 <input type="hidden" name="_METHOD" value="PATCH">
                 
                 <div class="form-group">
