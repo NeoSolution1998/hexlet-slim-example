@@ -1,10 +1,69 @@
-<form action="/users1">
-  <input type="search" name="term" value="<?= htmlspecialchars($term) ?>">
-  <input type="submit" value="Search">
-</form>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
 
-<?php foreach ($users as $user): ?>
-  <div>
-    <?= htmlspecialchars($user) ?>
-  </div>
-<?php endforeach ?>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-9 offset-md-2">
+
+                <?php if (count($flash) > 0) : ?>
+                    <ul>
+                        <?php foreach ($flash as $messages) : ?>
+                            <?php foreach ($messages as $message) : ?>
+                                <div class="badge bg-primary text-wrap">
+                                    <a align="center"><?= $message ?></a>
+                                </div>
+                            <?php endforeach ?>
+                        <?php endforeach ?>
+                    </ul>
+                <?php endif ?>
+
+                <h1>Пользователи</h1>
+                <form action="/users">
+                    <input class="form-control" type="search" name="term" value="<?= htmlspecialchars($term) ?>">
+                    <br><input class="btn btn-primary btn-sm" type="submit" value="Search">
+                </form>
+
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">id</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                        </tr>
+                    </thead>
+                    <?php foreach ($users as $user) : ?>
+                        <tr>
+                            <td class="table-light"><?= htmlspecialchars($user['id']) ?></td>
+                            <td class="table-light"><?= htmlspecialchars($user['name']) ?></td>
+                            <td class="table-light"><?= htmlspecialchars($user['email']) ?></td>
+                            <td class="table-light">
+                                <form action="users/<?= htmlspecialchars($user['id']) ?>">
+                                    <input class="btn btn-primary btn-sm" style="height:30px;width:70px" type="submit" value="user">
+                                </form>
+                            </td>
+                            <td class="table-light">
+                                <form action="/users/<?= htmlspecialchars($user['id']) ?>/edit">
+                                    <input class="btn btn-primary btn-sm" style="height:30px;width:70px" type="submit" value="update">
+                                </form>
+                            </td>
+
+                            <td class="table-light">
+                                <form action="/users/<?= htmlspecialchars($user['id']) ?>" method="post">
+                                    <input type="hidden" name="_METHOD" value="DELETE">
+                                    <input class="btn btn-primary btn-sm" style="height:30px;width:70px" type="submit" value="delete">
+                                </form>
+                            </td>
+                            
+                        </tr>
+                    <?php endforeach ?>
+                </table>
+
+                <form action="/users/new" method="get">
+                    <br><br><button class="btn btn-outline-success">add user</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>

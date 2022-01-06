@@ -3,20 +3,26 @@
 </head>
 
 
-<table class="table table-hover">
-    <thead>
-        <tr>
-            <th scope="col">id</th>
-            <th scope="col">Name</th>
-            <th scope="col">Email</th>
-        </tr>
-    </thead>
-    <tr>
-        <td class="table-light"><?= htmlspecialchars($id) ?></td>
-        <td class="table-light"><?= htmlspecialchars($name) ?></td>
-        <td class="table-light"><?= htmlspecialchars($email) ?></td>
-    </tr>
-</table>
-<form action="/users">
-<button class="btn btn-outline-success">go back</button>  
-</form>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">id</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Email</th>
+                    </tr>
+                </thead>
+                <tr>
+                    <td class="table-light"><?= htmlspecialchars($id) ?></td>
+                    <td class="table-light"><?= htmlspecialchars($name) ?></td>
+                    <td class="table-light"><?= htmlspecialchars($email) ?></td>
+                </tr>
+            </table>
+            <form action="/users">
+                <button class="btn btn-outline-success">go back</button>
+            </form>
+        </div>
+    </div>
+</div>

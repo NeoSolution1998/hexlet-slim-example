@@ -16,5 +16,8 @@
         "tightenco/collect": "^8.76",
         "symfony/string": "^6.0",
         "slim/flash": "^0.4.0"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^6.0"
     }
 }

@@ -1,3 +1,25 @@
 <h1>TEST</h1>
 
-<?= var_dump($flash)?>
+<?php
+
+$a = [
+    ['id' => 1, 'name' => 'toha'],
+    ['id' => 2, 'name' => 'rus'],
+    ['id' => 5, 'name' => 'lala'],
+    ['id' => 3, 'name' => 'oleg'],
+    ['id' => 7, 'name' => 'fds'],
+    ['id' => 9, 'name' => 'lcccc']
+];
+$b = ['id' => 3, 'name' => 'moleg'];
+?>
+
+<?php
+
+$test2 = collect($a)->map(function ($item, $key) use ($b) {
+    if($b['id'] == $item['id']){
+        unset($item);
+    } 
+    return $item;
+})->filter()->toArray();
+?>
+<pre><?= print_r($test2); ?></pre>
