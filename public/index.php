@@ -30,11 +30,6 @@ $app->addErrorMiddleware(true, true, true);
 
 $router = $app->getRouteCollector()->getRouteParser();
 
-$app->get('/', function ($request, $response) {
-    $response->getBody()->write('Welcome to Slim!');
-    return $response;
-});
-
 $app->get('/courses/{id}', function ($request, $response, array $args) {
     $id = $args['id'];
     return $response->write("this : {$id}");
@@ -50,14 +45,16 @@ $app->get('/courses/{courseId}/lessons/{id}', function ($request, $response, arr
 ///                      СПИСОК ПОЛЬЗОВАТЕЛЕЙ                       //
 //////////////////////////////////////////////////////////////////////
 $app->get('/users', function ($request, $response) use ($router) {
-    $file = file_get_contents('src/save.php'); // открываем файл
-    $users = json_decode($file, true); // данные из файла превращаем в массив 
+    $userData = $_SESSION['user'];
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
     $messages = $this->get('flash')->getMessages();
     $term = $request->getQueryParam('term'); // достаем поисковые данные
+
     $result = collect($users)->filter(
         fn ($user) => str_contains($user['name'], $term) ? $user['name'] : false
     ); //фильтруем данные по запросу
-    $params = ['users' => $result, 'term' => $term, 'flash' => $messages];
+
+    $params = ['users' => $users, 'flash' => $messages, 'user' => $userData];
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 })->setName('get-users');
 //////////////////////////////////////////////////////////////////////
@@ -71,15 +68,14 @@ $app->post('/users', function ($request, $response) use ($router) {
     $errors = $validator->validate($user);
     // запись файла
     if (count($errors) === 0) {
-        $path = 'src/save.php';
-        $this->get('flash')->addMessage('success', 'Пользователь был добавлен');// добавляем сообщение при регистрации
-        $file = file_get_contents($path); // открываем файл
-        $fileArray = json_decode($file, true); // данные из файла превращаем в массив
-        $data = ['name' => $user['name'], 'email' => $user['email'], 'id' => $id];
-        $fileArray[] = $data; // добавляем в массив данные нового пользователя
-        file_put_contents($path, json_encode($fileArray)); // сохраняем массив в json формате
-         
-        return $response->withRedirect($router->urlFor('get-users'));
+
+        $userCookey = json_decode($request->getCookieParam('users', json_encode([])), true);
+        $userCookey[] = ['name' => $user['name'], 'email' => $user['email'], 'id' => $id];
+        $this->get('flash')->addMessage('success', 'Пользователь был добавлен'); // добавляем сообщение при регистрации
+        $userUncode = json_encode($userCookey);
+        $url = $router->urlFor('get-users');
+        return $response->withHeader('Set-Cookie', "users={$userUncode}")
+            ->withRedirect($url);
     }
     $params = ['user' => $user, 'errors' => $errors];
     return $this->get('renderer')->render($response, 'users/new.phtml', $params);
@@ -95,9 +91,8 @@ $app->get('/users/new', function ($request, $response) {
 ///                       ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ                      //
 //////////////////////////////////////////////////////////////////////
 $app->get('/users/{id}', function ($request, $response, $args) {
-    $file = file_get_contents('src/save.php'); // открываем файл
-    $users = json_decode($file, true); // данные из файла превращаем в массив
 
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
     foreach ($users as $user) {
         if (in_array($args['id'], $user) === true) {
             $params = ['id' => $user['id'], 'name' => $user['name'], 'email' => $user['email']];
@@ -112,10 +107,8 @@ $app->get('/users/{id}', function ($request, $response, $args) {
 
 $app->get('/users/{id}/edit', function ($request, $response, array $args) {
     $id = $args['id']; // id пользователя
-    $file = file_get_contents('src/save.php'); // открываем файл
-    $users = json_decode($file, true); // данные из файла превращаем в массив
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
     $user = collect($users)->firstWhere('id', $id);
-
 
     $params = [
         'user' => $user,
@@ -127,28 +120,28 @@ $app->get('/users/{id}/edit', function ($request, $response, array $args) {
 ///////////////////////////////////////////////////////////////////////////////////
 ///                       ОБНОВЛЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ                        ///
 ///////////////////////////////////////////////////////////////////////////////////
-$app->patch('/users/{id}', function ($request, $response, array $args) use ($router)  {
+$app->patch('/users/{id}', function ($request, $response, array $args) use ($router) {
     $id = $args['id'];
-    $file = file_get_contents('src/save.php'); // открываем файл
-    $users = json_decode($file, true); // данные из файла превращаем в массив
-
-    $updateUser = $request->getParsedBodyParam('user');//новые данные 
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
+    $updateUser = $request->getParsedBodyParam('user'); //новые данные 
     $validator = new Validator();
     $errors = $validator->validate($updateUser);
 
     if (count($errors) === 0) {
         $userUp = collect($users)->map(function ($item, $key) use ($id, $updateUser) {
-            if($id == $item['id']){
+            if ($id == $item['id']) {
                 $updateUser['id'] = $id;
                 return $updateUser;
-            } 
+            }
             return $item;
-        });//меняем старые данные на новые
+        }); //меняем старые данные на новые
 
-        file_put_contents('src/save.php', json_encode($userUp)); // сохраняем изменения
         $this->get('flash')->addMessage('success', 'User has been updated');
+
         $url = $router->urlFor('get-users');
-        return $response->withRedirect($url);
+        $userUncode = json_encode($userUp);
+        return $response->withHeader('Set-Cookie', "users={$userUncode}")
+            ->withRedirect($url);
     }
 
     $params = [
@@ -158,7 +151,7 @@ $app->patch('/users/{id}', function ($request, $response, array $args) use ($rou
     ];
 
     return $this->get('renderer')
-                ->render($response->withStatus(422), 'users/edit.phtml', $params);
+        ->render($response->withStatus(422), 'users/edit.phtml', $params);
 });
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -166,27 +159,128 @@ $app->patch('/users/{id}', function ($request, $response, array $args) use ($rou
 ///////////////////////////////////////////////////////////////////////////////////
 $app->delete('/users/{id}', function ($request, $response, array $args) use ($router) {
     $id = $args['id'];
-    $file = file_get_contents('src/save.php'); // открываем файл
-    $users = json_decode($file, true); // данные из файла превращаем в массив
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
     $delete = collect($users)->map(function ($item, $key) use ($id) {
-        if($id == $item['id']){
+        if ($id == $item['id']) {
             unset($item);
-        } 
+        }
         return $item;
     })->filter()->toArray();
-    file_put_contents('src/save.php', json_encode($delete)); // сохраняем изменения
+    $url = $router->urlFor('get-users');
     $this->get('flash')->addMessage('success', 'User has been deleted');
-    return $response->withRedirect($router->urlFor('get-users'));
+    $userUncode = json_encode($delete);
+    return $response->withHeader('Set-Cookie', "users={$userUncode}")
+        ->withRedirect($url);
 });
+
+///////////////////////////////////////////////////////////////////////////////////
+///                               АВТОРИЗАЦИЯ                                   ///
+///////////////////////////////////////////////////////////////////////////////////
+
+$app->get('/', function ($request, $response) {
+    $flash = $this->get('flash')->getMessages();
+
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
+
+
+    $params = [
+        'use' => $users,
+        'currentUser' => $_SESSION['user'] ?? null,
+        'flash' => $flash
+    ];
+    return $this->get('renderer')->render($response, 'users/authentification.phtml', $params);
+})->setName('get-/');
+
+$app->post('/session', function ($request, $response) use ($router) {
+    $userEmail = $request->getParsedBodyParam('user');
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
+
+    $user = collect($users)->first(function ($user) use ($userEmail) {
+        return $user['email'] === $userEmail['email'];
+    });
+
+    if ($user) {
+        $_SESSION['user'] = $user;
+    } else {
+        $this->get('flash')->addMessage('error', 'Wrong password or name');
+    }
+    return $response->withRedirect('/users');
+});
+
+$app->delete('/session', function ($request, $response) {
+    $_SESSION = [];
+    session_destroy();
+    return $response->withRedirect('/users');
+});
+
+
+
+
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///                                  TEST                                       ///
 ///////////////////////////////////////////////////////////////////////////////////
+$app->get('/test/users', function ($request, $response) use ($router) {
+    $id = rand(1, 1000);
+
+    $users = json_decode($request->getCookieParam('user', json_encode([])), true);
+    $params = [
+        'users' => $users,
+        'user' => ['name' => '', 'email' => '', 'id' => $id], 'errors' => []
+    ];
+
+    return $this->get('renderer')->render($response, 'users/testUsers.phtml', $params);
+})->setName('get-testUser');
+
 
 $app->get('/test', function ($request, $response) use ($router) {
     $id = rand(1, 1000);
+    $users = json_decode($request->getCookieParam('user', json_encode([])), true);
     $params = ['user' => ['name' => '', 'email' => '', 'id' => $id], 'errors' => []];
     return $this->get('renderer')->render($response, 'users/test.phtml', $params);
-})->setName('test');
+})->setName('get-test');
+
+
+$app->post('/test', function ($request, $response) use ($router) {
+
+    $id = rand(1, 1000); // генерируем id
+    $validator = new Validator();
+    $user = $request->getParsedBodyParam('user');
+    $errors = $validator->validate($user);
+    // запись файла
+    if (count($errors) === 0) {
+
+        $userCookey = json_decode($request->getCookieParam('user', json_encode([])), true);
+        $userCookey[] = ['name' => $user['name'], 'email' => $user['email'], 'id' => $id];
+        $this->get('flash')->addMessage('success', 'Пользователь был добавлен'); // добавляем сообщение при регистрации
+        $userUncode = json_encode($userCookey);
+        print_r($userUncode);
+        return $response->withHeader('Set-Cookie', "user={$userUncode}")
+            ->withRedirect('/test/users');
+    }
+    $params = ['user' => $user, 'errors' => $errors];
+    return $this->get('renderer')->render($response, 'users/test.phtml', $params);
+})->setName('post-test');
+
+$app->delete('/test', function ($request, $response) {
+    $users = json_decode($request->getCookieParam('user', json_encode([])), true);
+    $id = 685;
+    $delete = collect($users)->map(function ($item, $key) use ($id) {
+        if ($id == $item['id']) {
+            unset($item);
+        }
+        return $item;
+    })->filter()->toArray();
+    return $response->withHeader('Set-Cookie', "user={$delete}")
+        ->withRedirect('/test/users');
+});
+
+
+
+
 
 $app->run();

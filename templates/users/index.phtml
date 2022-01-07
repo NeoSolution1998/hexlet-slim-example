@@ -7,6 +7,41 @@
         <div class="row">
             <div class="col-md-9 offset-md-2">
 
+                <div class="container">
+                    <header class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
+                        <a href="/" class="d-flex align-items-center col-md-3 mb-2 mb-md-0 text-dark text-decoration-none">
+                            <svg class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap">
+                                <use xlink:href="#bootstrap"></use>
+                            </svg>
+                        </a>
+
+                        <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
+                            <li><a href="#" class="nav-link px-2 link-secondary">Home</a></li>
+                            <li><a href="#" class="nav-link px-2 link-dark">Features</a></li>
+                            <li><a href="#" class="nav-link px-2 link-dark">Pricing</a></li>
+                            <li><a href="#" class="nav-link px-2 link-dark">FAQs</a></li>
+                            <li><a href="#" class="nav-link px-2 link-dark">About</a></li>
+                        </ul>
+
+                        <div class="col-md-3 text-end">
+                            <?php if ($_SESSION['user']) : ?>
+                                <form action="/users/<?= $user['id'] ?>">
+                                    <input type="submit" class="btn btn-outline-success" value="<?= ucfirst($user['name']) ?>">
+                                </form>
+
+                                <form action="/session" method="post">
+                                    <input type="hidden" name="_METHOD" value="DELETE">
+                                    <input type="submit" class="btn btn-outline-danger" value="Sing-aut">
+                                </form>
+
+                            <?php else : ?>
+                                <form action="/">
+                                    <input type="submit" class="btn btn-outline-success" value="Авторизоваться" style="float: right;">
+                                </form>
+                            <?php endif ?>
+                        </div>
+                </div>
+
                 <?php if (count($flash) > 0) : ?>
                     <ul>
                         <?php foreach ($flash as $messages) : ?>
@@ -55,7 +90,7 @@
                                     <input class="btn btn-primary btn-sm" style="height:30px;width:70px" type="submit" value="delete">
                                 </form>
                             </td>
-                            
+
                         </tr>
                     <?php endforeach ?>
                 </table>
