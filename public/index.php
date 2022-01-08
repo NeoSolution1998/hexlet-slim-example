@@ -49,12 +49,11 @@ $app->get('/users', function ($request, $response) use ($router) {
     $users = json_decode($request->getCookieParam('users', json_encode([])), true);
     $messages = $this->get('flash')->getMessages();
     $term = $request->getQueryParam('term'); // достаем поисковые данные
-
     $result = collect($users)->filter(
         fn ($user) => str_contains($user['name'], $term) ? $user['name'] : false
     ); //фильтруем данные по запросу
-
-    $params = ['users' => $users, 'flash' => $messages, 'user' => $userData];
+    
+    $params = ['users' => $result, 'flash' => $messages, 'user' => $userData];
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 })->setName('get-users');
 //////////////////////////////////////////////////////////////////////
